@@ -19,6 +19,7 @@ type Client struct {
 	send chan []byte
 	conn *websocket.Conn
 	id   uuid.UUID
+	name string
 }
 
 var upgrader = websocket.Upgrader{
@@ -50,11 +51,28 @@ var (
 	wg2     sync.WaitGroup
 )
 
+type Message struct {
+	ID      string `json:"id"`
+	Message string `json:"message"`
+	Type    string `json:"type"`
+	Name    string `json:"name"`
+}
+type Address struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type SendID struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
 func (c *Client) readPump() {
 	defer func() {
 		wg2.Add(1)
 		c.hub.unregister <- c
 		wg2.Wait()
+		c.sendCount()
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
@@ -68,9 +86,18 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		var msg Message
+		json.Unmarshal(message, &msg)
+		switch msg.Type {
+		case "name":
+			c.hub.setName <- msg
+			c.sendCount()
+		case "message":
+			rz, _ := json.Marshal(msg)
+			message = bytes.TrimSpace(bytes.Replace(rz, newline, space, -1))
 
-		c.hub.broadcast <- message
+			c.hub.broadcast <- message
+		}
 	}
 }
 func (c *Client) writePump() {
@@ -94,12 +121,6 @@ func (c *Client) writePump() {
 			}
 			w.Write(message)
 
-			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
-				w.Write(<-c.send)
-			}
 			if err := w.Close(); err != nil {
 				return
 			}
@@ -112,24 +133,17 @@ func (c *Client) writePump() {
 	}
 }
 
-type Address struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-}
-
 func (c *Client) sendCount() {
 	if c.hub.clients == nil {
 		return
 	}
-
+	fmt.Println("send ran")
 	keys := []Address{}
 	for v := range c.hub.clients {
 		id := v.String()
 		addr := Address{
 			Id:   id,
-			Name: "balls",
-			Type: "users",
+			Name: c.hub.clients[v].name,
 		}
 		keys = append(keys, addr)
 	}
@@ -143,7 +157,14 @@ func Sockets(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), id: uuid.New()}
-
+	id := uuid.New()
+	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), id: id}
+	wg.Add(1)
 	client.hub.register <- client
+	data := SendID{ID: id.String(), Type: "id"}
+	newId, _ := json.Marshal(data)
+	client.send <- newId
+	go client.readPump()
+	go client.writePump()
+	wg.Wait()
 }

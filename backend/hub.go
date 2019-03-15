@@ -5,17 +5,12 @@ import (
 )
 
 type Hub struct {
-	// Registered clients.
-	clients map[uuid.UUID]*Client
-
-	// Inbound messages from the clients.
-	broadcast chan []byte
-
-	// Register requests from the clients.
-	register chan *Client
-
-	// Unregister requests from clients.
+	clients    map[uuid.UUID]*Client
+	broadcast  chan []byte
+	sendID     chan []byte
+	register   chan *Client
 	unregister chan *Client
+	setName    chan Message
 }
 
 func newHub() *Hub {
@@ -23,6 +18,7 @@ func newHub() *Hub {
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
+		setName:    make(chan Message),
 		clients:    make(map[uuid.UUID]*Client),
 	}
 }
@@ -39,6 +35,9 @@ func (h *Hub) run() {
 				close(client.send)
 				wg2.Done()
 			}
+		case payload := <-h.setName:
+			id, _ := uuid.Parse(payload.ID)
+			h.clients[id].name = payload.Name
 		case message := <-h.broadcast:
 			for client := range h.clients {
 				select {

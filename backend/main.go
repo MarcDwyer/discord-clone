@@ -9,7 +9,9 @@ import (
 func main() {
 	hub := newHub()
 
-	http.HandleFunc("/register/", func(w http.ResponseWriter, r *http.Request) {
+	go hub.run()
+
+	http.HandleFunc("/sockets/", func(w http.ResponseWriter, r *http.Request) {
 		Sockets(hub, w, r)
 	})
 	fmt.Println("server started")
