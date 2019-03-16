@@ -45,7 +45,6 @@ class Main extends Component<{}, IState> {
                     this.setState({users: payload}) 
                     return
                 }
-                console.log(payload.type)
                 switch (payload.type) {
                     case "id":
                     this.setState({id: payload.id})
@@ -54,8 +53,9 @@ class Main extends Component<{}, IState> {
                     this.setState({user: payload})
                     return
                     case "message":
-                    console.log(payload)
-                    this.setState({messages: [...messages, payload]})
+                    this.setState((prevState) => {
+                        return {messages: [...prevState.messages, payload]}
+                    })
                     return
                 }
             })
@@ -98,7 +98,6 @@ class Main extends Component<{}, IState> {
     }
     sendMessage = (msg: Message) => {
         const { ws } = this.state
-
         ws.send(JSON.stringify(msg))
     }
 }
