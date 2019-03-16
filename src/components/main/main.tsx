@@ -1,25 +1,25 @@
 import React, { Component } from 'react'
 import { MainDiv, Container, EnterName, Header, Form } from './main-styles'
 import List from '../chat-list/list'
+import Chat from '../chat/chat'
 
+import './main-styles.scss'
 
-interface State {
+interface IState {
     ws: WebSocket | null;
-    isAuth: boolean;
-    sendName: boolean;
     name: string;
     id: string | null;
+    user: Users | null;
     users: Users[] | null;
 }
-interface Users {
+export interface Users {
     id: string;
     name: string;
 }
-class Main extends Component<{}, State> {
+class Main extends Component<{}, IState> {
     state = {
         ws: new WebSocket(`ws://${document.location.hostname}:5000/sockets/`),
-        isAuth: false,
-        sendName: false,
+        user: null,
         id: null,
         name: '',
         users: null
@@ -28,19 +28,25 @@ class Main extends Component<{}, State> {
         const { ws } = this.state
             ws.addEventListener("message", (msg) => {
                 const payload = JSON.parse(msg.data)
-                console.log(payload)
-                if (Array.isArray(payload)) this.setState({users: payload})
+                if (Array.isArray(payload)) {
+                    this.setState({users: payload}) 
+                    return
+                }
                 switch (payload.type) {
                     case "id":
-                    this.setState({id: payload})
+                    this.setState({id: payload.id})
+                    return
+                    case "address":
+                    this.setState({user: payload})
+                    return
                 }
             })
     }
     render() {
-        const { isAuth, ws, name, id } = this.state
+        const { user, users, ws, name, id } = this.state
         return (
             <MainDiv>
-                {!isAuth && (
+                {!user && (
                     <Container>
                         <Header>
                             Enter a name
@@ -54,7 +60,6 @@ class Main extends Component<{}, State> {
                                 type: "name"
                             }
                             ws.send(JSON.stringify(obj))
-                            this.setState({isAuth: true})
                         }}
                         >
                         <EnterName 
@@ -64,14 +69,14 @@ class Main extends Component<{}, State> {
                         </Form>
                     </Container>
                 )}
-                {isAuth && (
-                    <List />
+                {users && user && (
+                    <div className="main-div">
+                    <List users={users} user={user} />
+                    <Chat />
+                    </div>
                 )}
             </MainDiv>
         )
-    }
-    changeAuth = () => {
-        this.setState({isAuth: !this.state.isAuth})
     }
 }
 

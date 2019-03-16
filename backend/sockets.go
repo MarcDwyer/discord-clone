@@ -58,8 +58,9 @@ type Message struct {
 	Name    string `json:"name"`
 }
 type Address struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID   string  `json:"id"`
+	Name string  `json:"name"`
+	Type *string `json:"type,omitempty"`
 }
 
 type SendID struct {
@@ -91,7 +92,8 @@ func (c *Client) readPump() {
 		switch msg.Type {
 		case "name":
 			c.name = msg.Name
-			addr := Address{Name: c.name, ID: c.id.String()}
+			tp := "address"
+			addr := Address{Name: c.name, ID: c.id.String(), Type: &tp}
 			rz, _ := json.Marshal(addr)
 			c.send <- rz
 			c.sendCount()
