@@ -58,7 +58,7 @@ type Message struct {
 	Name    string `json:"name"`
 }
 type Address struct {
-	Id   string `json:"id"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -90,7 +90,10 @@ func (c *Client) readPump() {
 		json.Unmarshal(message, &msg)
 		switch msg.Type {
 		case "name":
-			c.hub.setName <- msg
+			c.name = msg.Name
+			addr := Address{Name: c.name, ID: c.id.String()}
+			rz, _ := json.Marshal(addr)
+			c.send <- rz
 			c.sendCount()
 		case "message":
 			rz, _ := json.Marshal(msg)
@@ -142,7 +145,7 @@ func (c *Client) sendCount() {
 	for v := range c.hub.clients {
 		id := v.String()
 		addr := Address{
-			Id:   id,
+			ID:   id,
 			Name: c.hub.clients[v].name,
 		}
 		keys = append(keys, addr)
@@ -159,12 +162,10 @@ func Sockets(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	}
 	id := uuid.New()
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), id: id}
-	wg.Add(1)
 	client.hub.register <- client
 	data := SendID{ID: id.String(), Type: "id"}
-	newId, _ := json.Marshal(data)
-	client.send <- newId
+	newID, _ := json.Marshal(data)
+	client.send <- newID
 	go client.readPump()
 	go client.writePump()
-	wg.Wait()
 }

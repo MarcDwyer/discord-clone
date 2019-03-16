@@ -10,7 +10,6 @@ type Hub struct {
 	sendID     chan []byte
 	register   chan *Client
 	unregister chan *Client
-	setName    chan Message
 }
 
 func newHub() *Hub {
@@ -18,7 +17,6 @@ func newHub() *Hub {
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
-		setName:    make(chan Message),
 		clients:    make(map[uuid.UUID]*Client),
 	}
 }
@@ -28,16 +26,12 @@ func (h *Hub) run() {
 		select {
 		case client := <-h.register:
 			h.clients[client.id] = client
-			wg.Done()
 		case client := <-h.unregister:
 			if _, ok := h.clients[client.id]; ok {
 				delete(h.clients, client.id)
 				close(client.send)
 				wg2.Done()
 			}
-		case payload := <-h.setName:
-			id, _ := uuid.Parse(payload.ID)
-			h.clients[id].name = payload.Name
 		case message := <-h.broadcast:
 			for client := range h.clients {
 				select {

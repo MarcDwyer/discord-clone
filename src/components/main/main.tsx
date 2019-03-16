@@ -28,16 +28,16 @@ class Main extends Component<{}, State> {
         const { ws } = this.state
             ws.addEventListener("message", (msg) => {
                 const payload = JSON.parse(msg.data)
+                console.log(payload)
                 if (Array.isArray(payload)) this.setState({users: payload})
                 switch (payload.type) {
                     case "id":
-                    this.setState({id: payload.id})
+                    this.setState({id: payload})
                 }
             })
     }
     render() {
         const { isAuth, ws, name, id } = this.state
-        console.log(this.state)
         return (
             <MainDiv>
                 {!isAuth && (
