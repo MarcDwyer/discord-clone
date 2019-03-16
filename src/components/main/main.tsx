@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { MainDiv, Container, EnterName, Header, Form } from './main-styles'
 import List from '../chat-list/list'
 import Chat from '../chat/chat'
+import Nav from '../nav/nav'
 
 import './main-styles.scss'
 
@@ -12,6 +13,7 @@ interface IState {
     user: Users | null;
     users: Users[] | null;
     messages: SubMessage[];
+    tabs: string[];
 }
 export interface Users {
     id: string;
@@ -35,33 +37,34 @@ class Main extends Component<{}, IState> {
         id: null,
         name: '',
         users: null,
-        messages: []
+        messages: [],
+        tabs: ["home"]
     }
     componentDidMount() {
         const { ws, messages } = this.state
-            ws.addEventListener("message", (msg) => {
-                const payload = JSON.parse(msg.data)
-                if (Array.isArray(payload)) {
-                    this.setState({users: payload}) 
+        ws.addEventListener("message", (msg) => {
+            const payload = JSON.parse(msg.data)
+            if (Array.isArray(payload)) {
+                this.setState({ users: payload })
+                return
+            }
+            switch (payload.type) {
+                case "id":
+                    this.setState({ id: payload.id })
                     return
-                }
-                switch (payload.type) {
-                    case "id":
-                    this.setState({id: payload.id})
+                case "address":
+                    this.setState({ user: payload })
                     return
-                    case "address":
-                    this.setState({user: payload})
-                    return
-                    case "message":
+                case "message":
                     this.setState((prevState) => {
-                        return {messages: [...prevState.messages, payload]}
+                        return { messages: [...prevState.messages, payload] }
                     })
                     return
-                }
-            })
+            }
+        })
     }
     render() {
-        const { user, users, ws, name, id, messages } = this.state
+        const { user, users, ws, name, id, messages, tabs } = this.state
         return (
             <MainDiv>
                 {!user && (
@@ -70,27 +73,32 @@ class Main extends Component<{}, IState> {
                             Enter a name
                         </Header>
                         <Form
-                        onSubmit={(e) => {
-                            e.preventDefault()
-                            const obj = {
-                                id,
-                                name,
-                                type: "name"
-                            }
-                            ws.send(JSON.stringify(obj))
-                        }}
+                            onSubmit={(e) => {
+                                e.preventDefault()
+                                const obj = {
+                                    id,
+                                    name,
+                                    type: "name"
+                                }
+                                ws.send(JSON.stringify(obj))
+                            }}
                         >
-                        <EnterName 
-                        onChange={(e) => this.setState({name: e.target.value})}
-                        value={name}
-                        />
+                            <EnterName
+                                onChange={(e) => this.setState({ name: e.target.value })}
+                                value={name}
+                            />
                         </Form>
                     </Container>
                 )}
                 {users && user && (
                     <div className="main-div">
-                    <List users={users} user={user} />
-                    <Chat sendMessage={this.sendMessage} user={user} messages={messages} />
+                        <List users={users} user={user} />
+                        <div className="sub-div">
+                            <Nav />
+                            {tabs.map((v, i) => (
+                                <Chat type={v} sendMessage={this.sendMessage} user={user} messages={messages} />
+                            ))}
+                        </div>
                     </div>
                 )}
             </MainDiv>
