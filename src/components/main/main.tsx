@@ -11,10 +11,22 @@ interface IState {
     id: string | null;
     user: Users | null;
     users: Users[] | null;
+    messages: SubMessage[];
 }
 export interface Users {
     id: string;
     name: string;
+}
+export interface Message {
+    id: string;
+    message: string;
+    name: string;
+    type: string;
+}
+export interface SubMessage {
+    message: string;
+    name: string;
+    type: string;
 }
 class Main extends Component<{}, IState> {
     state = {
@@ -22,16 +34,18 @@ class Main extends Component<{}, IState> {
         user: null,
         id: null,
         name: '',
-        users: null
+        users: null,
+        messages: []
     }
     componentDidMount() {
-        const { ws } = this.state
+        const { ws, messages } = this.state
             ws.addEventListener("message", (msg) => {
                 const payload = JSON.parse(msg.data)
                 if (Array.isArray(payload)) {
                     this.setState({users: payload}) 
                     return
                 }
+                console.log(payload.type)
                 switch (payload.type) {
                     case "id":
                     this.setState({id: payload.id})
@@ -39,11 +53,15 @@ class Main extends Component<{}, IState> {
                     case "address":
                     this.setState({user: payload})
                     return
+                    case "message":
+                    console.log(payload)
+                    this.setState({messages: [...messages, payload]})
+                    return
                 }
             })
     }
     render() {
-        const { user, users, ws, name, id } = this.state
+        const { user, users, ws, name, id, messages } = this.state
         return (
             <MainDiv>
                 {!user && (
@@ -72,11 +90,16 @@ class Main extends Component<{}, IState> {
                 {users && user && (
                     <div className="main-div">
                     <List users={users} user={user} />
-                    <Chat />
+                    <Chat sendMessage={this.sendMessage} user={user} messages={messages} />
                     </div>
                 )}
             </MainDiv>
         )
+    }
+    sendMessage = (msg: Message) => {
+        const { ws } = this.state
+
+        ws.send(JSON.stringify(msg))
     }
 }
 

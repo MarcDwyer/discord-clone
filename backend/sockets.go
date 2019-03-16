@@ -67,6 +67,11 @@ type SendID struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
 }
+type SubMessage struct {
+	Message string `json:"message"`
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+}
 
 func (c *Client) readPump() {
 	defer func() {
@@ -98,7 +103,8 @@ func (c *Client) readPump() {
 			c.send <- rz
 			c.sendCount()
 		case "message":
-			rz, _ := json.Marshal(msg)
+			snd := SubMessage{Message: msg.Message, Name: msg.Name, Type: "message"}
+			rz, _ := json.Marshal(snd)
 			message = bytes.TrimSpace(bytes.Replace(rz, newline, space, -1))
 
 			c.hub.broadcast <- message
