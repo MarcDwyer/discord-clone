@@ -96,7 +96,7 @@ class Main extends Component<{}, IState> {
                         <div className="sub-div">
                             <Nav />
                             {tabs.map((v, i) => (
-                                <Chat type={v} sendMessage={this.sendMessage} user={user} messages={messages} />
+                                <Chat key={i} type={v} sendMessage={this.sendMessage} user={user} messages={messages} />
                             ))}
                         </div>
                     </div>
