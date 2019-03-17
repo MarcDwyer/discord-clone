@@ -1,0 +1,25 @@
+.main-user {
+    height: 100%;
+    width: 95%;
+    display: flex;
+    margin: auto;
+    flex-direction: column;
+    overflow-y: auto;
+    h4 {
+        margin-left: 15px;
+    }
+    .user {
+        height: 55px;
+        border: solid 1px #66666C;
+        display: flex;
+        margin: 5px 0 5px 0;
+         
+        &:hover {
+            background-color: #3A3A42;
+        }
+        span {
+            margin: auto;
+            text-transform: capitalize;
+        }
+    }
+}
