@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Message, Users, SubMessage } from '../main/main'
 
 import './chat-styles.scss'
@@ -7,20 +7,29 @@ interface Props {
     sendMessage: Function;
     user: Users;
     messages: SubMessage[];
-    type: string;
+    type: Users;
 }
 const Chat = (props: Props) => {
     const { user, sendMessage } = props
 
     const [message, setMessage] = useState<string>("")
-    console.log(props.messages)
+
+    const chatDiv: React.RefObject<HTMLInputElement> = useRef()
+
+    useEffect(() => {
+        if (chatDiv && chatDiv.current) {
+            chatDiv.current.scrollTop = chatDiv.current.scrollHeight;
+        }
+    }, [props.messages])
+    console.log(props.type)
     return (
         <div className="chat">
-            <div className="actual-chat">
+            <div className="actual-chat" ref={chatDiv}>
                 {props.messages.length > 0 && props.messages.map((v, i) => {
                     return (
                         <div className="message" key={i}>
-                            <span>{v.name + ": " + v.message}</span>
+                            <span className="name">{v.name+": "}</span>
+                            <span>{v.message}</span>
                         </div>
                     )
                 })}

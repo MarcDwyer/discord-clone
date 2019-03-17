@@ -2,9 +2,11 @@
     height: 100%;
     width: 95%;
     display: flex;
-    margin: auto;
+    margin: 0 auto 15px auto;
     flex-direction: column;
     overflow-y: auto;
+    border-bottom: 1px solid rgba(87,99,109, .55);
+    
     h4 {
         margin-left: 15px;
     }
@@ -13,6 +15,7 @@
         border: solid 1px #66666C;
         display: flex;
         margin: 5px 0 5px 0;
+        cursor: pointer;
          
         &:hover {
             background-color: #3A3A42;
@@ -22,4 +25,18 @@
             text-transform: capitalize;
         }
     }
+    .home {
+        border: 1px solid rgba(127,191,127, 1);
+        color: rgba(127,191,127, 1)
+    }
+    .home:hover {
+        background-color: rgba(127,191,127, .15);
+    }
+}
+
+.welcome {
+    width: 100%;
+    text-align: center;
+    bottom: 10px;
+    margin-top: auto;
 }

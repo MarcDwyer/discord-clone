@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import { MainDiv, Container, EnterName, Header, Form } from './main-styles'
 import List from '../chat-list/list'
 import Chat from '../chat/chat'
-import Nav from '../nav/nav'
 
 import './main-styles.scss'
 
@@ -13,7 +12,7 @@ interface IState {
     user: Users | null;
     users: Users[] | null;
     messages: SubMessage[];
-    tabs: string[];
+    tabs: Users[];
 }
 export interface Users {
     id: string;
@@ -38,7 +37,7 @@ class Main extends Component<{}, IState> {
         name: '',
         users: null,
         messages: [],
-        tabs: ["home"]
+        tabs: [{id: "home", name: "home"}]
     }
     componentDidMount() {
         const { ws, messages } = this.state
@@ -94,7 +93,6 @@ class Main extends Component<{}, IState> {
                     <div className="main-div">
                         <List users={users} user={user} />
                         <div className="sub-div">
-                            <Nav />
                             {tabs.map((v, i) => (
                                 <Chat key={i} type={v} sendMessage={this.sendMessage} user={user} messages={messages} />
                             ))}
@@ -107,6 +105,11 @@ class Main extends Component<{}, IState> {
     sendMessage = (msg: Message) => {
         const { ws } = this.state
         ws.send(JSON.stringify(msg))
+    }
+    openWindow = (name: Users) => {
+        this.setState((prevState) => {
+            return {tabs: [...prevState.tabs, name]}
+        })
     }
 }
 

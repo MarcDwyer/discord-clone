@@ -14,15 +14,18 @@ const List = (props: Props) => {
     return (
         <ListView>
             <div className="main-user">
-                <h2>Online Users {users.length}</h2>
+            <div className="user home">
+                <span>Home</span>
+            </div>
+                <h2>Online Users {newUser.length}</h2>
                 {users && (
                     newUser.map((v, i) => {
                         return (
                             <div className="user" key={i}
-                            onClick={() => {
-                                if (v.id === props.user.id) return
-                                console.log("not my name")
-                            }}
+                                onClick={() => {
+                                    if (v.id === props.user.id) return
+                                    console.log("not my name")
+                                }}
                             >
                                 <span>{v.name}</span>
                             </div>
@@ -30,6 +33,7 @@ const List = (props: Props) => {
                     })
                 )}
             </div>
+            <h3 className="welcome">Welcome {user.name}!</h3>
         </ListView>
     )
 }

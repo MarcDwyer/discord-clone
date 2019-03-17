@@ -3,17 +3,19 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 
     .actual-chat {
-        height: 100%;
         width: 100%;
-        margin: 0 10px 0 10px;
+        margin: auto 10px 0 10px;
         overflow-y: auto;
 
         .message {
-            margin: 5px 0 5px 0;
-            border-bottom: 1px solid rgba(58,58,66, .4);
-            text-transform: capitalize;
+            margin: 15px 0 15px 0;
+
+            .name {
+                text-transform: capitalize;
+            }
         }
     }
 
