@@ -12,7 +12,7 @@ interface IState {
     user: Users | null;
     users: Users[] | null;
     messages: SubMessage[];
-    tabs: Users[];
+    tab: Users;
 }
 export interface Users {
     id: string;
@@ -37,7 +37,7 @@ class Main extends Component<{}, IState> {
         name: '',
         users: null,
         messages: [],
-        tabs: [{id: "home", name: "home"}]
+        tab: {id: "home", name: "home"}
     }
     componentDidMount() {
         const { ws, messages } = this.state
@@ -63,7 +63,8 @@ class Main extends Component<{}, IState> {
         })
     }
     render() {
-        const { user, users, ws, name, id, messages, tabs } = this.state
+        const { user, users, ws, name, id, messages, tab } = this.state
+        console.log(this.state.tab)
         return (
             <MainDiv>
                 {!user && (
@@ -91,11 +92,9 @@ class Main extends Component<{}, IState> {
                 )}
                 {users && user && (
                     <div className="main-div">
-                        <List users={users} user={user} />
+                        <List users={users} user={user} openWindow={this.openWindow} tab={tab} />
                         <div className="sub-div">
-                            {tabs.map((v, i) => (
-                                <Chat key={i} type={v} sendMessage={this.sendMessage} user={user} messages={messages} />
-                            ))}
+                        <Chat type={this.state.tab} sendMessage={this.sendMessage} user={user} messages={messages} />
                         </div>
                     </div>
                 )}
@@ -107,9 +106,7 @@ class Main extends Component<{}, IState> {
         ws.send(JSON.stringify(msg))
     }
     openWindow = (name: Users) => {
-        this.setState((prevState) => {
-            return {tabs: [...prevState.tabs, name]}
-        })
+        this.setState({tab: name})
     }
 }
 

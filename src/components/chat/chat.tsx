@@ -21,7 +21,6 @@ const Chat = (props: Props) => {
             chatDiv.current.scrollTop = chatDiv.current.scrollHeight;
         }
     }, [props.messages])
-    console.log(props.type)
     return (
         <div className="chat">
             <div className="actual-chat" ref={chatDiv}>
