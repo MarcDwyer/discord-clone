@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Message, Users, SubMessage, ChatData } from '../main/main'
+import { Users, SubChat, Message, ChatData } from '../main/main'
 
 import './chat-styles.scss'
 
@@ -10,25 +10,25 @@ interface Props {
     selected: string;
 }
 const Chat = (props: Props) => {
-    const { user, sendMessage, selected } = props
+    const { user, selected } = props
 
     const [message, setMessage] = useState<string>("")
     const [fail, setFail] = useState<string | null>(null)
     const chatDiv: React.RefObject<HTMLInputElement> = useRef()
-
+    const objData: SubChat = props.chatData[props.selected]
     useEffect(() => {
         if (chatDiv && chatDiv.current) {
             chatDiv.current.scrollTop = chatDiv.current.scrollHeight;
         }
     }, [props.chatData])
-    console.log(props.chatData[selected])
+
     return (
         <div className="chat">
             <div className="actual-chat" ref={chatDiv}>
-                {props.chatData[selected].messages.length > 0 && props.chatData[selected].messages.map((v, i) => {
+                {objData.messages.length > 0 && objData.messages.map((v, i) => {
                     return (
                         <div className="message" key={i}>
-                            <span className="name">{v.name+": "}</span>
+                            <span className="name">{v.name + ": "}</span>
                             <span>{v.message}</span>
                         </div>
                     )
@@ -38,20 +38,29 @@ const Chat = (props: Props) => {
                 <form
                     onSubmit={(e) => {
                         e.preventDefault()
-                        try {
-                            if (message.length === 0) throw "Message must be longer"
+                        if (message.length === 0) throw "Message must be longer"
 
-                            const payload: Message = {
-                                id: user.id,
-                                name: user.name,
-                                message,
-                                type: props.selected
-                            }
-                            setMessage("")
-                            sendMessage(payload)
-                        } catch(err) {
-                            setFail(err)
+                        switch (selected) {
+                            case "home":
+                                const payload = {
+                                    id: user.id,
+                                    name: user.name,
+                                    message,
+                                    type: "home"
+                                }
+                                props.sendMessage(payload)
+                                break
+                            default:
+                                const privateMessage: Message = {
+                                    fromId: props.user.id,
+                                    message,
+                                    toId: objData.id,
+                                    fromName: props.user.name,
+                                    type: "private"
+                                } 
+                                props.sendMessage(privateMessage)
                         }
+                        setMessage("")
                     }}
                 >
                     <input

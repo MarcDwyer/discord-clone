@@ -21,15 +21,15 @@ export interface Users {
 export interface ChatData {
     [key: string]: SubChat;
 }
-interface SubChat {
+export interface SubChat {
     id: string;
-    name: string;
     messages: SubMessage[]; 
 }
 export interface Message {
-    id: string;
+    fromId: string;
     message: string;
-    name: string;
+    toId: string | undefined;
+    fromName: string;
     type: string;
 }
 export interface SubMessage {
@@ -61,7 +61,6 @@ class Main extends Component<{}, State> {
                 this.setState({ users: payload })
                 return
             }
-            console.log(payload)
             switch (payload.type) {
                 case "id":
                     this.setState({ id: payload.id })
@@ -79,11 +78,19 @@ class Main extends Component<{}, State> {
                 case "private":
                 this.setState((prevState) => {
                     const newObj = prevState.chatData
-                    newObj["home"].messages.push(payload)
+                    if (!newObj[payload.to]) {
+                        console.log("1")
+                        newObj[payload.id] = payload
+                        return
+                    } else {
+                        console.log("2")
+                        newObj[payload.to].messages.push(payload.message)
+                    }
+                    
                     return { chatData: newObj }
                 })
-                return
             }
+            console.log(this.state.chatData)
         })
     }
     render() {
@@ -115,7 +122,7 @@ class Main extends Component<{}, State> {
                 )}
                 {users && user && (
                     <div className="main-div">
-                        <List users={users} user={user} addWindow={this.addWindow} chatData={chatData} />
+                        <List users={users} user={user} addWindow={this.addWindow} chatData={chatData} selected={selected} setSelected={this.setSelected} />
                         <div className="sub-div">
                             <Chat chatData={chatData} sendMessage={this.sendMessage} user={user} selected={selected} />
                         </div>
@@ -124,20 +131,22 @@ class Main extends Component<{}, State> {
             </MainDiv>
         )
     }
-    sendMessage = (msg: Message) => {
+    setSelected = (select: string) => {
+        this.setState({selected: select})
+    }
+    sendMessage = (msg) => {
         const { ws } = this.state
         ws.send(JSON.stringify(msg))
     }
-    addWindow = (selected: string, user: Users) => {
+    addWindow = (to: Users) => {
         this.setState((prevState) => {
-            const newMsg: SubChat = {
-                id: user.id,
-                name: user.name,
+            const newWin: SubChat = {
+                id: to.id,
                 messages: []
             }
             const newObj = prevState.chatData
-            newObj[newMsg.id] = newMsg
-           return { selected: selected, chatData: newObj }
+            newObj[to.id] = newWin
+           return { selected: to.id, chatData: newObj }
         })
     }
 }

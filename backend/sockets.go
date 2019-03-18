@@ -51,11 +51,14 @@ var (
 	wg2     sync.WaitGroup
 )
 
-type Message struct {
-	ID      string `json:"id"`
-	Message string `json:"message"`
-	Type    string `json:"type"`
-	Name    string `json:"name"`
+type Payload struct {
+	ID       string `json:"id"`
+	Message  string `json:"message"`
+	ToID     string `json:"toId"`
+	FromID   string `json:"fromId"`
+	FromName string `json:"fromName"`
+	Type     string `json:"type"`
+	Name     string `json:"name"`
 }
 type Address struct {
 	ID   string  `json:"id"`
@@ -92,29 +95,35 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		var msg Message
-		json.Unmarshal(message, &msg)
-		fmt.Println(msg)
-		switch msg.Type {
+		var payload Payload
+		json.Unmarshal(message, &payload)
+		fmt.Println(payload)
+		switch payload.Type {
 		case "name":
-			c.name = msg.Name
+			c.name = payload.Name
 			tp := "address"
 			addr := Address{Name: c.name, ID: c.id.String(), Type: &tp}
 			rz, _ := json.Marshal(addr)
 			c.send <- rz
 			c.sendCount()
+			fmt.Println(2)
 		case "home":
-			fmt.Println(msg)
-			snd := SubMessage{Message: msg.Message, Name: msg.Name, Type: "home"}
+			snd := SubMessage{Message: payload.Message, Name: payload.Name, Type: "home"}
 			rz, _ := json.Marshal(snd)
 			message = bytes.TrimSpace(bytes.Replace(rz, newline, space, -1))
 
 			c.hub.broadcast <- message
-		default:
-			fmt.Println("default ran")
-			rz, _ := json.Marshal(msg)
+			fmt.Println(1)
+			break
+		case "private":
+			fmt.Println(3)
+			id, _ := uuid.Parse(payload.ToID)
+			fmt.Println(id)
+			// addr := Address{Name: payload.Name, ID: c.id.String(), Type: &payload.Type}
+			rz, _ := json.Marshal(payload)
 			message = bytes.TrimSpace(bytes.Replace(rz, newline, space, -1))
-			c.hub.clients[msg.Type].send <- message
+			c.send <- message
+			c.hub.clients[id].send <- message
 		}
 	}
 }
