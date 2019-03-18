@@ -45,7 +45,7 @@ const Chat = (props: Props) => {
                                 id: user.id,
                                 name: user.name,
                                 message,
-                                type: "message"
+                                type: props.selected
                             }
                             setMessage("")
                             sendMessage(payload)

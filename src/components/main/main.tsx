@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import { MainDiv, Container, EnterName, Header, Form } from './main-styles'
-import update from 'immutability-helper'
 import List from '../chat-list/list'
 import Chat from '../chat/chat'
 
@@ -62,6 +61,7 @@ class Main extends Component<{}, State> {
                 this.setState({ users: payload })
                 return
             }
+            console.log(payload)
             switch (payload.type) {
                 case "id":
                     this.setState({ id: payload.id })
@@ -69,14 +69,20 @@ class Main extends Component<{}, State> {
                 case "address":
                     this.setState({ user: payload })
                     return
-                case "message":
+                case "home":
                     this.setState((prevState) => {
-                    //    const newArray = update(prevState["home"].messages, {$push: payload})
                         const newObj = prevState.chatData
                         newObj["home"].messages.push(payload)
                         return { chatData: newObj }
                     })
                     return
+                case "private":
+                this.setState((prevState) => {
+                    const newObj = prevState.chatData
+                    newObj["home"].messages.push(payload)
+                    return { chatData: newObj }
+                })
+                return
             }
         })
     }
@@ -109,7 +115,7 @@ class Main extends Component<{}, State> {
                 )}
                 {users && user && (
                     <div className="main-div">
-                        <List users={users} user={user} addWindow={this.addWindow} selected={this.state.selected} chatData={chatData} />
+                        <List users={users} user={user} addWindow={this.addWindow} chatData={chatData} />
                         <div className="sub-div">
                             <Chat chatData={chatData} sendMessage={this.sendMessage} user={user} selected={selected} />
                         </div>

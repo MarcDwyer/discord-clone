@@ -94,6 +94,7 @@ func (c *Client) readPump() {
 		}
 		var msg Message
 		json.Unmarshal(message, &msg)
+		fmt.Println(msg)
 		switch msg.Type {
 		case "name":
 			c.name = msg.Name
@@ -102,12 +103,18 @@ func (c *Client) readPump() {
 			rz, _ := json.Marshal(addr)
 			c.send <- rz
 			c.sendCount()
-		case "message":
-			snd := SubMessage{Message: msg.Message, Name: msg.Name, Type: "message"}
+		case "home":
+			fmt.Println(msg)
+			snd := SubMessage{Message: msg.Message, Name: msg.Name, Type: "home"}
 			rz, _ := json.Marshal(snd)
 			message = bytes.TrimSpace(bytes.Replace(rz, newline, space, -1))
 
 			c.hub.broadcast <- message
+		default:
+			fmt.Println("default ran")
+			rz, _ := json.Marshal(msg)
+			message = bytes.TrimSpace(bytes.Replace(rz, newline, space, -1))
+			c.hub.clients[msg.Type].send <- message
 		}
 	}
 }
@@ -148,7 +155,6 @@ func (c *Client) sendCount() {
 	if c.hub.clients == nil {
 		return
 	}
-	fmt.Println("send ran")
 	keys := []Address{}
 	for v := range c.hub.clients {
 		id := v.String()

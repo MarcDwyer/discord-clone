@@ -8,11 +8,10 @@ interface Props {
     users: Users[];
     user: Users;
     addWindow: Function;
-    selected: string
     chatData: ChatData;
 }
 const List = (props: Props) => {
-    const { users, user, selected, chatData } = props
+    const { users, user, chatData } = props
     const newUser = users.filter(v => v.name.length > 0)
     return (
         <ListView>
