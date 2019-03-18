@@ -1,22 +1,31 @@
 import React, { Component } from 'react'
 import { MainDiv, Container, EnterName, Header, Form } from './main-styles'
+import update from 'immutability-helper'
 import List from '../chat-list/list'
 import Chat from '../chat/chat'
 
 import './main-styles.scss'
 
-interface IState {
-    ws: WebSocket | null;
+interface State {
+    ws: WebSocket;
     name: string;
     id: string | null;
     user: Users | null;
     users: Users[] | null;
-    messages: SubMessage[];
-    tab: Users;
+    selected: string;
+    chatData: ChatData;
 }
 export interface Users {
     id: string;
     name: string;
+}
+export interface ChatData {
+    [key: string]: SubChat;
+}
+interface SubChat {
+    id: string;
+    name: string;
+    messages: SubMessage[]; 
 }
 export interface Message {
     id: string;
@@ -26,21 +35,27 @@ export interface Message {
 }
 export interface SubMessage {
     message: string;
+    id: string;
     name: string;
-    type: string;
 }
-class Main extends Component<{}, IState> {
+class Main extends Component<{}, State> {
     state = {
         ws: new WebSocket(`ws://${document.location.hostname}:5000/sockets/`),
         user: null,
         id: null,
         name: '',
         users: null,
-        messages: [],
-        tab: {id: "home", name: "home"}
+        selected: "home",
+        chatData: {
+            "home": {
+                id: "home",
+                name: "home",
+                messages: []
+            }
+        }
     }
     componentDidMount() {
-        const { ws, messages } = this.state
+        const { ws, selected } = this.state
         ws.addEventListener("message", (msg) => {
             const payload = JSON.parse(msg.data)
             if (Array.isArray(payload)) {
@@ -56,15 +71,17 @@ class Main extends Component<{}, IState> {
                     return
                 case "message":
                     this.setState((prevState) => {
-                        return { messages: [...prevState.messages, payload] }
+                    //    const newArray = update(prevState["home"].messages, {$push: payload})
+                        const newObj = prevState.chatData
+                        newObj["home"].messages.push(payload)
+                        return { chatData: newObj }
                     })
                     return
             }
         })
     }
     render() {
-        const { user, users, ws, name, id, messages, tab } = this.state
-        console.log(this.state.tab)
+        const { user, users, ws, name, id, chatData, selected } = this.state
         return (
             <MainDiv>
                 {!user && (
@@ -92,9 +109,9 @@ class Main extends Component<{}, IState> {
                 )}
                 {users && user && (
                     <div className="main-div">
-                        <List users={users} user={user} openWindow={this.openWindow} tab={tab} />
+                        <List users={users} user={user} addWindow={this.addWindow} selected={this.state.selected} chatData={chatData} />
                         <div className="sub-div">
-                        <Chat type={this.state.tab} sendMessage={this.sendMessage} user={user} messages={messages} />
+                            <Chat chatData={chatData} sendMessage={this.sendMessage} user={user} selected={selected} />
                         </div>
                     </div>
                 )}
@@ -105,8 +122,17 @@ class Main extends Component<{}, IState> {
         const { ws } = this.state
         ws.send(JSON.stringify(msg))
     }
-    openWindow = (name: Users) => {
-        this.setState({tab: name})
+    addWindow = (selected: string, user: Users) => {
+        this.setState((prevState) => {
+            const newMsg: SubChat = {
+                id: user.id,
+                name: user.name,
+                messages: []
+            }
+            const newObj = prevState.chatData
+            newObj[newMsg.id] = newMsg
+           return { selected: selected, chatData: newObj }
+        })
     }
 }
 

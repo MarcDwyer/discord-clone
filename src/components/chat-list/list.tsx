@@ -1,5 +1,5 @@
 import React from 'react'
-import { Users } from '../main/main'
+import { Users, ChatData } from '../main/main'
 import { ListView } from './list-styled'
 
 import './list-styles.scss'
@@ -7,18 +7,18 @@ import './list-styles.scss'
 interface Props {
     users: Users[];
     user: Users;
-    openWindow: Function;
-    tab: Users;
+    addWindow: Function;
+    selected: string
+    chatData: ChatData;
 }
 const List = (props: Props) => {
-    const { users, user, tab } = props
+    const { users, user, selected, chatData } = props
     const newUser = users.filter(v => v.name.length > 0)
     return (
         <ListView>
             <div className="main-user">
             <div className="user home"
-            style={tab.id === 'home' ? {backgroundColor: "rgba(127,191,127, .15)"} : {}}
-            onClick={() => props.openWindow({id: "home", name: "home"})}
+            style={chatData["home"] ? {backgroundColor: "rgba(127,191,127, .15)"} : {}}
             >
                 <span>Home</span>
             </div>
@@ -27,10 +27,10 @@ const List = (props: Props) => {
                     newUser.map((v, i) => {
                         return (
                             <div className="user" key={i}
-                            style={tab.id === v.id ? {backgroundColor: "#3A3A42"} : {}}
+                            style={chatData[v.id] ? {backgroundColor: "#3A3A42"} : {}}
                                 onClick={() => {
                                     if (v.id === props.user.id) return
-                                    props.openWindow(v)
+                                    props.addWindow(v.id, v)
                                 }}
                             >
                                 <span>{v.name}</span>
