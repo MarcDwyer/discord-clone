@@ -10,9 +10,8 @@ interface State {
     name: string;
     id: string | null;
     user: Users | null;
-    users: Users[] | null;
     selected: string;
-    chatData: ChatData;
+    chatData: ChatData | null;
 }
 export interface Users {
     id: string;
@@ -23,7 +22,9 @@ export interface ChatData {
 }
 export interface SubChat {
     id: string;
-    messages: SubMessage[]; 
+    name: string;
+    messages: SubMessage[];
+    type: string; 
 }
 export interface Message {
     fromId: string;
@@ -43,23 +44,27 @@ class Main extends Component<{}, State> {
         user: null,
         id: null,
         name: '',
-        users: null,
         selected: "home",
-        chatData: {
-            "home": {
-                id: "home",
-                name: "home",
-                messages: []
-            }
-        }
+        chatData: null
     }
     componentDidMount() {
-        const { ws, selected } = this.state
+        const { ws, id, chatData } = this.state
         ws.addEventListener("message", (msg) => {
             const payload = JSON.parse(msg.data)
             if (Array.isArray(payload)) {
-                this.setState({ users: payload })
-                return
+                const newUsers = payload.reduce((obj, item: Users) => {
+                    const newObj = {
+                        id: item.id,
+                        name: item.name,
+                        messages: [],
+                        type: "private"  
+                    }
+                    obj[item.id] = newObj
+                    return obj
+                }, {})
+                newUsers["home"] = {id: "home", name: "home", messages: [], type: "home"}
+                console.log(newUsers)
+                this.setState({ chatData: newUsers })
             }
             switch (payload.type) {
                 case "id":
@@ -69,32 +74,27 @@ class Main extends Component<{}, State> {
                     this.setState({ user: payload })
                     return
                 case "home":
+                console.log(payload)
                     this.setState((prevState) => {
                         const newObj = prevState.chatData
-                        newObj["home"].messages.push(payload)
+                        newObj["home"].messages = [...newObj["home"].messages, payload]
                         return { chatData: newObj }
                     })
                     return
                 case "private":
-                this.setState((prevState) => {
-                    const newObj = prevState.chatData
-                    if (!newObj[payload.to]) {
-                        console.log("1")
-                        newObj[payload.id] = payload
-                        return
-                    } else {
-                        console.log("2")
-                        newObj[payload.to].messages.push(payload.message)
+                console.log(this.state.chatData)
+                    if (this.state.chatData[payload.id]) {
+                        this.setState((prevState) => {
+                            const shallow: ChatData = prevState.chatData
+                            shallow[payload.id].messages = [...shallow[payload.id].messages, payload.message]
+                            return {chatData: shallow}
+                        })
                     }
-                    
-                    return { chatData: newObj }
-                })
             }
-            console.log(this.state.chatData)
         })
     }
     render() {
-        const { user, users, ws, name, id, chatData, selected } = this.state
+        const { user, ws, name, id, chatData, selected } = this.state
         return (
             <MainDiv>
                 {!user && (
@@ -120,9 +120,9 @@ class Main extends Component<{}, State> {
                         </Form>
                     </Container>
                 )}
-                {users && user && (
+                {user && chatData && (
                     <div className="main-div">
-                        <List users={users} user={user} addWindow={this.addWindow} chatData={chatData} selected={selected} setSelected={this.setSelected} />
+                        <List user={user} sendMessage={this.sendMessage} chatData={chatData} selected={selected} setSelected={this.setSelected} />
                         <div className="sub-div">
                             <Chat chatData={chatData} sendMessage={this.sendMessage} user={user} selected={selected} />
                         </div>
@@ -137,17 +137,6 @@ class Main extends Component<{}, State> {
     sendMessage = (msg) => {
         const { ws } = this.state
         ws.send(JSON.stringify(msg))
-    }
-    addWindow = (to: Users) => {
-        this.setState((prevState) => {
-            const newWin: SubChat = {
-                id: to.id,
-                messages: []
-            }
-            const newObj = prevState.chatData
-            newObj[to.id] = newWin
-           return { selected: to.id, chatData: newObj }
-        })
     }
 }
 

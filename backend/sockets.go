@@ -52,18 +52,20 @@ var (
 )
 
 type Payload struct {
-	ID       string `json:"id"`
-	Message  string `json:"message"`
-	ToID     string `json:"toId"`
-	FromID   string `json:"fromId"`
-	FromName string `json:"fromName"`
-	Type     string `json:"type"`
-	Name     string `json:"name"`
+	ID            string  `json:"id"`
+	Message       Address `json:"message"`
+	ToID          string  `json:"toId"`
+	FromID        string  `json:"fromId"`
+	FromName      string  `json:"fromName"`
+	GlobalMessage string  `json:"globalMessage"`
+	Type          string  `json:"type"`
+	Name          string  `json:"name"`
 }
 type Address struct {
-	ID   string  `json:"id"`
-	Name string  `json:"name"`
-	Type *string `json:"type,omitempty"`
+	ID      string  `json:"id"`
+	Name    string  `json:"name"`
+	Message *string `json:"message,omitempty"`
+	Type    *string `json:"type,omitempty"`
 }
 
 type SendID struct {
@@ -71,9 +73,17 @@ type SendID struct {
 	Type string `json:"type"`
 }
 type SubMessage struct {
-	Message string `json:"message"`
-	Name    string `json:"name"`
-	Type    string `json:"type"`
+	Message Address `json:"message"`
+	Name    string  `json:"name"`
+	Type    string  `json:"type"`
+	ToID    *string `json:"toId,omitempty"`
+}
+type Private struct {
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Message  Address `json:"message"`
+	IsSender bool    `json:"isSender"`
+	Type     string  `json:"type"`
 }
 
 func (c *Client) readPump() {
@@ -108,7 +118,7 @@ func (c *Client) readPump() {
 			c.sendCount()
 			fmt.Println(2)
 		case "home":
-			snd := SubMessage{Message: payload.Message, Name: payload.Name, Type: "home"}
+			snd := Address{ID: payload.ID, Message: &payload.GlobalMessage, Name: payload.Name, Type: &payload.Type}
 			rz, _ := json.Marshal(snd)
 			message = bytes.TrimSpace(bytes.Replace(rz, newline, space, -1))
 
@@ -118,12 +128,14 @@ func (c *Client) readPump() {
 		case "private":
 			fmt.Println(3)
 			id, _ := uuid.Parse(payload.ToID)
-			fmt.Println(id)
-			// addr := Address{Name: payload.Name, ID: c.id.String(), Type: &payload.Type}
-			rz, _ := json.Marshal(payload)
-			message = bytes.TrimSpace(bytes.Replace(rz, newline, space, -1))
-			c.send <- message
-			c.hub.clients[id].send <- message
+			from := Private{ID: payload.ToID, Name: payload.FromName, Message: payload.Message, IsSender: true, Type: "private"}
+			to := Private{ID: c.id.String(), Message: payload.Message, IsSender: false, Type: "private"}
+			sender, _ := json.Marshal(from)
+			receiver, _ := json.Marshal(to)
+			sender = bytes.TrimSpace(bytes.Replace(sender, newline, space, -1))
+			receiver = bytes.TrimSpace(bytes.Replace(receiver, newline, space, -1))
+			c.send <- sender
+			c.hub.clients[id].send <- receiver
 		}
 	}
 }
@@ -166,6 +178,9 @@ func (c *Client) sendCount() {
 	}
 	keys := []Address{}
 	for v := range c.hub.clients {
+		if len(c.hub.clients[v].name) == 0 {
+			continue
+		}
 		id := v.String()
 		addr := Address{
 			ID:   id,

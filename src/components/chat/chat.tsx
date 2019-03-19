@@ -21,14 +21,15 @@ const Chat = (props: Props) => {
             chatDiv.current.scrollTop = chatDiv.current.scrollHeight;
         }
     }, [props.chatData])
-
+    console.log(objData.messages)
     return (
         <div className="chat">
+        <h4>{objData.name}</h4>
             <div className="actual-chat" ref={chatDiv}>
                 {objData.messages.length > 0 && objData.messages.map((v, i) => {
                     return (
                         <div className="message" key={i}>
-                            <span className="name">{v.name + ": "}</span>
+                            <span className="name">{v.name  + ": "}</span>
                             <span>{v.message}</span>
                         </div>
                     )
@@ -45,19 +46,24 @@ const Chat = (props: Props) => {
                                 const payload = {
                                     id: user.id,
                                     name: user.name,
-                                    message,
+                                    globalMessage: message,
                                     type: "home"
                                 }
                                 props.sendMessage(payload)
                                 break
                             default:
-                                const privateMessage: Message = {
+                                const privateMessage = {
                                     fromId: props.user.id,
-                                    message,
+                                    message: {
+                                        name: user.name,
+                                        id: user.id,
+                                        message: message
+                                    },
                                     toId: objData.id,
+                                    globalMessage: false,
                                     fromName: props.user.name,
                                     type: "private"
-                                } 
+                                }
                                 props.sendMessage(privateMessage)
                         }
                         setMessage("")
