@@ -21,7 +21,6 @@ const Chat = (props: Props) => {
             chatDiv.current.scrollTop = chatDiv.current.scrollHeight;
         }
     }, [props.chatData])
-    console.log(objData.messages)
     return (
         <div className="chat">
         <h4>{objData.name}</h4>
@@ -46,22 +45,24 @@ const Chat = (props: Props) => {
                                 const payload = {
                                     id: user.id,
                                     name: user.name,
-                                    globalMessage: message,
+                                    message: {
+                                        name: user.name,
+                                        id: user.id,
+                                        message: message,
+                                        type: "home"
+                                    }, 
                                     type: "home"
                                 }
                                 props.sendMessage(payload)
                                 break
                             default:
                                 const privateMessage = {
-                                    fromId: props.user.id,
+                                    id: objData.id,
                                     message: {
                                         name: user.name,
                                         id: user.id,
                                         message: message
                                     },
-                                    toId: objData.id,
-                                    globalMessage: false,
-                                    fromName: props.user.name,
                                     type: "private"
                                 }
                                 props.sendMessage(privateMessage)

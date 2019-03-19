@@ -30,7 +30,6 @@ func (h *Hub) run() {
 			if _, ok := h.clients[client.id]; ok {
 				delete(h.clients, client.id)
 				close(client.send)
-				wg2.Done()
 			}
 		case message := <-h.broadcast:
 			for client := range h.clients {

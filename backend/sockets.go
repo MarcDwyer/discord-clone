@@ -52,14 +52,10 @@ var (
 )
 
 type Payload struct {
-	ID            string  `json:"id"`
-	Message       Address `json:"message"`
-	ToID          string  `json:"toId"`
-	FromID        string  `json:"fromId"`
-	FromName      string  `json:"fromName"`
-	GlobalMessage string  `json:"globalMessage"`
-	Type          string  `json:"type"`
-	Name          string  `json:"name"`
+	ID      string  `json:"id"`
+	Message Address `json:"message"`
+	Name    *string `json:"name,omitempty"`
+	Type    string  `json:"type"`
 }
 type Address struct {
 	ID      string  `json:"id"`
@@ -72,27 +68,25 @@ type SendID struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
 }
-type SubMessage struct {
-	Message Address `json:"message"`
-	Name    string  `json:"name"`
-	Type    string  `json:"type"`
-	ToID    *string `json:"toId,omitempty"`
-}
 type Private struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	Message  Address `json:"message"`
-	IsSender bool    `json:"isSender"`
-	Type     string  `json:"type"`
+	ID      string  `json:"id"`
+	Name    string  `json:"name"`
+	Message Address `json:"message"`
+	Type    string  `json:"type"`
+}
+type SendUser struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Type string `json:"type"`
 }
 
 func (c *Client) readPump() {
 	defer func() {
-		wg2.Add(1)
 		c.hub.unregister <- c
-		wg2.Wait()
-		c.sendCount()
 		c.conn.Close()
+		offline := SendID{ID: c.id.String(), Type: "offline"}
+		off, _ := json.Marshal(offline)
+		c.hub.broadcast <- off
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -107,35 +101,30 @@ func (c *Client) readPump() {
 		}
 		var payload Payload
 		json.Unmarshal(message, &payload)
-		fmt.Println(payload)
 		switch payload.Type {
 		case "name":
-			c.name = payload.Name
+			c.name = *payload.Name
 			tp := "address"
 			addr := Address{Name: c.name, ID: c.id.String(), Type: &tp}
 			rz, _ := json.Marshal(addr)
 			c.send <- rz
+			c.sendNewUser()
 			c.sendCount()
-			fmt.Println(2)
 		case "home":
-			snd := Address{ID: payload.ID, Message: &payload.GlobalMessage, Name: payload.Name, Type: &payload.Type}
-			rz, _ := json.Marshal(snd)
+			rz, _ := json.Marshal(payload.Message)
 			message = bytes.TrimSpace(bytes.Replace(rz, newline, space, -1))
-
 			c.hub.broadcast <- message
-			fmt.Println(1)
 			break
 		case "private":
-			fmt.Println(3)
-			id, _ := uuid.Parse(payload.ToID)
-			from := Private{ID: payload.ToID, Name: payload.FromName, Message: payload.Message, IsSender: true, Type: "private"}
-			to := Private{ID: c.id.String(), Message: payload.Message, IsSender: false, Type: "private"}
-			sender, _ := json.Marshal(from)
-			receiver, _ := json.Marshal(to)
-			sender = bytes.TrimSpace(bytes.Replace(sender, newline, space, -1))
-			receiver = bytes.TrimSpace(bytes.Replace(receiver, newline, space, -1))
-			c.send <- sender
-			c.hub.clients[id].send <- receiver
+			from := Private{ID: payload.ID, Message: payload.Message, Type: "private"}
+			data, _ := json.Marshal(from)
+			c.send <- data
+			to := Private{ID: c.id.String(), Message: payload.Message, Type: "private"}
+			data, _ = json.Marshal(to)
+			id, _ := uuid.Parse(payload.ID)
+			if _, ok := c.hub.clients[id]; ok {
+				c.hub.clients[id].send <- data
+			}
 		}
 	}
 }
@@ -189,10 +178,17 @@ func (c *Client) sendCount() {
 		keys = append(keys, addr)
 	}
 	rz, _ := json.Marshal(keys)
-	c.hub.broadcast <- rz
+	c.send <- rz
 
 }
-
+func (c *Client) sendNewUser() {
+	if len(c.name) == 0 {
+		fmt.Println("whoops")
+	}
+	user := SendUser{ID: c.id.String(), Name: c.name, Type: "addUser"}
+	usr, _ := json.Marshal(user)
+	c.hub.broadcast <- usr
+}
 func Sockets(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -201,6 +197,7 @@ func Sockets(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	id := uuid.New()
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), id: id}
 	client.hub.register <- client
+
 	data := SendID{ID: id.String(), Type: "id"}
 	newID, _ := json.Marshal(data)
 	client.send <- newID

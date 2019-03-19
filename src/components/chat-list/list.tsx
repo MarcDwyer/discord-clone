@@ -22,11 +22,11 @@ const List = (props: Props) => {
                 >
                     <span>Home</span>
                 </div>
-                <h2>Online Users {Object.values(chatData).length}</h2>
+                <h2>Online Users {Object.values(chatData).length - 1}</h2>
                 {Object.values(chatData).map((v, i) => {
                     if (v.name === "home") return
                     return (
-                        <div className="user" key={i}
+                        <div className={`user ${v.isOnline ? "online" : "offline"}`} key={i}
                             // @ts-ignore
                             style={v.id === selected ? { backgroundColor: "#3A3A42" } : {}}
                             onClick={() => {

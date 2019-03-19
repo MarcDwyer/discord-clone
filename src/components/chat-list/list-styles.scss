@@ -25,6 +25,9 @@
             text-transform: capitalize;
         }
     }
+    .offline {
+        background-color: red;
+    }
     .home {
         border: 1px solid rgba(127,191,127, 1);
         color: rgba(127,191,127, 1)

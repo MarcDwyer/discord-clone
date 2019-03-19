@@ -24,6 +24,7 @@ export interface SubChat {
     id: string;
     name: string;
     messages: SubMessage[];
+    isOnline: boolean;
     type: string; 
 }
 export interface Message {
@@ -48,41 +49,51 @@ class Main extends Component<{}, State> {
         chatData: null
     }
     componentDidMount() {
-        const { ws, id, chatData } = this.state
+        const { ws } = this.state
         ws.addEventListener("message", (msg) => {
             const payload = JSON.parse(msg.data)
+            console.log(payload)
             if (Array.isArray(payload)) {
                 const newUsers = payload.reduce((obj, item: Users) => {
                     const newObj = {
                         id: item.id,
                         name: item.name,
                         messages: [],
+                        isOnline: true,
                         type: "private"  
                     }
                     obj[item.id] = newObj
                     return obj
                 }, {})
                 newUsers["home"] = {id: "home", name: "home", messages: [], type: "home"}
-                console.log(newUsers)
                 this.setState({ chatData: newUsers })
             }
             switch (payload.type) {
                 case "id":
                     this.setState({ id: payload.id })
-                    return
+                    break
                 case "address":
                     this.setState({ user: payload })
-                    return
+                    break
                 case "home":
-                console.log(payload)
                     this.setState((prevState) => {
                         const newObj = prevState.chatData
                         newObj["home"].messages = [...newObj["home"].messages, payload]
                         return { chatData: newObj }
                     })
-                    return
+                case "addUser":
+                console.log("this ran")
+                if (payload.id === this.state.id) return
+                this.setState((prevState) => {
+                    const shallow = prevState.chatData
+                    const newObj = {...payload, messages: [], isOnline: true, type: "private"}
+                    //@ts-ignore
+                    shallow[payload.id] = newObj
+                    return {chatData: shallow}
+                })
+                break
                 case "private":
-                console.log(this.state.chatData)
+                console.log("wtf")
                     if (this.state.chatData[payload.id]) {
                         this.setState((prevState) => {
                             const shallow: ChatData = prevState.chatData
@@ -90,6 +101,11 @@ class Main extends Component<{}, State> {
                             return {chatData: shallow}
                         })
                     }
+                case "offline":
+                const shallow = {...this.state.chatData}
+                shallow[payload.id].isOnline = false
+                this.setState({chatData: shallow})
+          
             }
         })
     }
