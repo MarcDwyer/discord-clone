@@ -21,7 +21,6 @@ const Chat = (props: Props) => {
             chatDiv.current.scrollTop = chatDiv.current.scrollHeight;
         }
     }, [props.chatData])
-    console.log(objData)
     return (
         <div className="chat">
         <h4>{objData.type === "home" ? "Global Chat" : `Private messaging ${objData.name}`}</h4>

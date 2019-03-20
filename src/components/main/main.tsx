@@ -137,7 +137,6 @@ class Main extends Component<{}, State> {
         )
     }
     setSelected = (select: SubChat) => {
-        console.log(select.newMessage)
         if (select.newMessage) {
             const shallow = {...this.state.chatData}
             shallow[select.id].newMessage = false
