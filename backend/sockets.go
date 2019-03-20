@@ -177,7 +177,7 @@ func (c *Client) sendCount() {
 	keys := make(map[string]ClientPayload)
 
 	for v, i := range c.hub.clients {
-		if len(i.name) == 0 {
+		if len(i.name) == 0 || v == c.id {
 			continue
 		}
 		dum := []Address{}

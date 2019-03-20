@@ -142,6 +142,7 @@ class Main extends Component<{}, State> {
             shallow[select.id].newMessage = false
             this.setState({chatData: shallow})
         }
+        console.log(select.id)
         this.setState({selected: select.id})
     }
     sendMessage = (msg) => {

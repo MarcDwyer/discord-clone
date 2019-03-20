@@ -22,7 +22,7 @@ const List = (props: Props) => {
             <div className="main-user">
                 <div className="user home"
                     style={selected === 'home' ? { backgroundColor: "rgba(127,191,127, .15)" } : {}}
-                    onClick={() => props.setSelected("home")}
+                    onClick={() => props.setSelected({id: "home"})}
                 >
                     <span>Home</span>
                 </div>
