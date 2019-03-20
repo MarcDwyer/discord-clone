@@ -24,6 +24,7 @@ export interface SubChat {
     id: string;
     name: string;
     messages: SubMessage[];
+    newMessage: boolean;
     isOnline: boolean;
     type: string; 
 }
@@ -51,22 +52,7 @@ class Main extends Component<{}, State> {
     componentDidMount() {
         const { ws } = this.state
         ws.addEventListener("message", (msg) => {
-            const payload = JSON.parse(msg.data)
-            if (Array.isArray(payload)) {
-                const newUsers = payload.reduce((obj, item: Users) => {
-                    const newObj = {
-                        id: item.id,
-                        name: item.name,
-                        messages: [],
-                        isOnline: true,
-                        type: "private"  
-                    }
-                    obj[item.id] = newObj
-                    return obj
-                }, {})
-                newUsers["home"] = {id: "home", name: "home", isOnline: true, messages: [], type: "home"}
-                this.setState({ chatData: newUsers })
-            }
+            const payload = JSON.parse(msg.data)    
             switch (payload.type) {
                 case "id":
                     this.setState({ id: payload.id })
@@ -93,8 +79,10 @@ class Main extends Component<{}, State> {
                     if (this.state.chatData[payload.id]) {
                         const shallow = {...this.state.chatData}
                         shallow[payload.id].messages = [...shallow[payload.id].messages, payload.message]
-                        console.log(shallow)
-                        this.setState({chatData: shallow})
+                        if (shallow[payload.id].id !== this.state.selected) {
+                            shallow[payload.id].newMessage = true
+                        }
+                            this.setState({chatData: shallow}) 
                     }
                     break
                 case "offline":
@@ -103,7 +91,10 @@ class Main extends Component<{}, State> {
                     shallow[payload.id].isOnline = false
                     this.setState({chatData: shallow})
                 }
-          
+                break
+                default:
+                payload["home"] = {id: "home", name: "home", isOnline: true, messages: [], type: "home"}
+                this.setState({chatData: payload})
             }
         })
     }
@@ -145,8 +136,14 @@ class Main extends Component<{}, State> {
             </MainDiv>
         )
     }
-    setSelected = (select: string) => {
-        this.setState({selected: select})
+    setSelected = (select: SubChat) => {
+        console.log(select.newMessage)
+        if (select.newMessage) {
+            const shallow = {...this.state.chatData}
+            shallow[select.id].newMessage = false
+            this.setState({chatData: shallow})
+        }
+        this.setState({selected: select.id})
     }
     sendMessage = (msg) => {
         const { ws } = this.state

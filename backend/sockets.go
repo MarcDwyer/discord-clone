@@ -161,21 +161,28 @@ func (c *Client) writePump() {
 	}
 }
 
+type ClientPayload struct {
+	ID         string    `json:"id"`
+	Name       string    `json:"name"`
+	Messages   []Address `json:"messages"`
+	IsOnline   bool      `json:"isOnline"`
+	NewMessage bool      `json:""newMessage`
+	Type       string    `json:"type"`
+}
+
 func (c *Client) sendCount() {
 	if c.hub.clients == nil {
 		return
 	}
-	keys := []Address{}
-	for v := range c.hub.clients {
-		if len(c.hub.clients[v].name) == 0 || v == c.id {
+	keys := make(map[string]ClientPayload)
+
+	for v, i := range c.hub.clients {
+		if len(i.name) == 0 {
 			continue
 		}
-		id := v.String()
-		addr := Address{
-			ID:   id,
-			Name: c.hub.clients[v].name,
-		}
-		keys = append(keys, addr)
+		dum := []Address{}
+		data := ClientPayload{ID: v.String(), Messages: dum, Name: i.name, NewMessage: false, IsOnline: true, Type: "private"}
+		keys[data.ID] = data
 	}
 	rz, _ := json.Marshal(keys)
 	c.send <- rz

@@ -28,13 +28,13 @@ const List = (props: Props) => {
                 </div>
                 <h2>Online Users {online.length - 1}</h2>
                 {online.map((v, i) => {
-                    if (v.name === "home") return
+                    if (v.type === "home") return
                     return (
-                        <div className="user" key={i}
+                        <div className={`user ${v.newMessage ? "blinked" : ""}`} key={i}
                             style={v.id === selected ? { backgroundColor: "#3A3A42" } : {}}
                             onClick={() => {
                                 if (v.id === props.user.id || !v.isOnline) return
-                                props.setSelected(v.id)
+                                props.setSelected(v)
                             }}
                         >
                             <span>{v.name}</span>
@@ -48,7 +48,7 @@ const List = (props: Props) => {
                             style={v.id === selected ? { backgroundColor: "#3A3A42" } : {}}
                             onClick={() => {
                                 if (v.id === props.user.id) return
-                                props.setSelected(v.id)
+                                props.setSelected(v)
                             }}
                         >
                             <span>{v.name}</span>
