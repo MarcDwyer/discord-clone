@@ -82,11 +82,11 @@ type SendUser struct {
 
 func (c *Client) readPump() {
 	defer func() {
-		c.hub.unregister <- c
-		c.conn.Close()
 		offline := SendID{ID: c.id.String(), Type: "offline"}
 		off, _ := json.Marshal(offline)
 		c.hub.broadcast <- off
+		c.hub.unregister <- c
+		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -122,8 +122,8 @@ func (c *Client) readPump() {
 			to := Private{ID: c.id.String(), Message: payload.Message, Type: "private"}
 			data, _ = json.Marshal(to)
 			id, _ := uuid.Parse(payload.ID)
-			if _, ok := c.hub.clients[id]; ok {
-				c.hub.clients[id].send <- data
+			if v, ok := c.hub.clients[id]; ok {
+				v.send <- data
 			}
 		}
 	}
@@ -167,7 +167,7 @@ func (c *Client) sendCount() {
 	}
 	keys := []Address{}
 	for v := range c.hub.clients {
-		if len(c.hub.clients[v].name) == 0 {
+		if len(c.hub.clients[v].name) == 0 || v == c.id {
 			continue
 		}
 		id := v.String()

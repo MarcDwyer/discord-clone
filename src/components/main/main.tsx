@@ -6,7 +6,7 @@ import Chat from '../chat/chat'
 import './main-styles.scss'
 
 interface State {
-    ws: WebSocket;
+    ws: WebSocket | null;
     name: string;
     id: string | null;
     user: Users | null;
@@ -52,7 +52,6 @@ class Main extends Component<{}, State> {
         const { ws } = this.state
         ws.addEventListener("message", (msg) => {
             const payload = JSON.parse(msg.data)
-            console.log(payload)
             if (Array.isArray(payload)) {
                 const newUsers = payload.reduce((obj, item: Users) => {
                     const newObj = {
@@ -65,7 +64,7 @@ class Main extends Component<{}, State> {
                     obj[item.id] = newObj
                     return obj
                 }, {})
-                newUsers["home"] = {id: "home", name: "home", messages: [], type: "home"}
+                newUsers["home"] = {id: "home", name: "home", isOnline: true, messages: [], type: "home"}
                 this.setState({ chatData: newUsers })
             }
             switch (payload.type) {
@@ -81,30 +80,29 @@ class Main extends Component<{}, State> {
                         newObj["home"].messages = [...newObj["home"].messages, payload]
                         return { chatData: newObj }
                     })
+                    break
                 case "addUser":
-                console.log("this ran")
-                if (payload.id === this.state.id) return
-                this.setState((prevState) => {
-                    const shallow = prevState.chatData
+                if (!this.state.chatData || payload.id === this.state.id) return
+
+                    const shallow = this.state.chatData
                     const newObj = {...payload, messages: [], isOnline: true, type: "private"}
-                    //@ts-ignore
                     shallow[payload.id] = newObj
-                    return {chatData: shallow}
-                })
+                    this.setState({chatData: shallow})
                 break
                 case "private":
-                console.log("wtf")
                     if (this.state.chatData[payload.id]) {
-                        this.setState((prevState) => {
-                            const shallow: ChatData = prevState.chatData
-                            shallow[payload.id].messages = [...shallow[payload.id].messages, payload.message]
-                            return {chatData: shallow}
-                        })
+                        const shallow = {...this.state.chatData}
+                        shallow[payload.id].messages = [...shallow[payload.id].messages, payload.message]
+                        console.log(shallow)
+                        this.setState({chatData: shallow})
                     }
+                    break
                 case "offline":
-                const shallow = {...this.state.chatData}
-                shallow[payload.id].isOnline = false
-                this.setState({chatData: shallow})
+                if (this.state.chatData && this.state.chatData[payload.id]) {
+                    const shallow = {...this.state.chatData}
+                    shallow[payload.id].isOnline = false
+                    this.setState({chatData: shallow})
+                }
           
             }
         })

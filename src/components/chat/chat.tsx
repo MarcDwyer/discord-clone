@@ -23,7 +23,7 @@ const Chat = (props: Props) => {
     }, [props.chatData])
     return (
         <div className="chat">
-        <h4>{objData.name}</h4>
+        <h4>{objData.type === "home" ? "Global Chat" : `Private messaging ${objData.name}`}</h4>
             <div className="actual-chat" ref={chatDiv}>
                 {objData.messages.length > 0 && objData.messages.map((v, i) => {
                     return (
@@ -42,7 +42,7 @@ const Chat = (props: Props) => {
 
                         switch (selected) {
                             case "home":
-                                const payload = {
+                                const globalMessage = {
                                     id: user.id,
                                     name: user.name,
                                     message: {
@@ -53,7 +53,7 @@ const Chat = (props: Props) => {
                                     }, 
                                     type: "home"
                                 }
-                                props.sendMessage(payload)
+                                props.sendMessage(globalMessage)
                                 break
                             default:
                                 const privateMessage = {

@@ -13,6 +13,10 @@ interface Props {
 }
 const List = (props: Props) => {
     const { user, chatData, selected } = props
+
+    const online = Object.values(chatData).filter(item => item.isOnline)
+    const disconnected = Object.values(chatData).filter(item => !item.isOnline)
+
     return (
         <ListView>
             <div className="main-user">
@@ -22,12 +26,25 @@ const List = (props: Props) => {
                 >
                     <span>Home</span>
                 </div>
-                <h2>Online Users {Object.values(chatData).length - 1}</h2>
-                {Object.values(chatData).map((v, i) => {
+                <h2>Online Users {online.length - 1}</h2>
+                {online.map((v, i) => {
                     if (v.name === "home") return
                     return (
-                        <div className={`user ${v.isOnline ? "online" : "offline"}`} key={i}
-                            // @ts-ignore
+                        <div className="user" key={i}
+                            style={v.id === selected ? { backgroundColor: "#3A3A42" } : {}}
+                            onClick={() => {
+                                if (v.id === props.user.id || !v.isOnline) return
+                                props.setSelected(v.id)
+                            }}
+                        >
+                            <span>{v.name}</span>
+                        </div>
+                    )
+                })}
+                {disconnected.length > 0 && (<h2>Offline {disconnected.length}</h2>)}
+                {disconnected.length > 0 && disconnected.map((v, i) => {
+                    return (
+                        <div className="user offline" key={i}
                             style={v.id === selected ? { backgroundColor: "#3A3A42" } : {}}
                             onClick={() => {
                                 if (v.id === props.user.id) return
@@ -38,6 +55,8 @@ const List = (props: Props) => {
                         </div>
                     )
                 })}
+
+
             </div>
             <h3 className="welcome">Welcome {user.name}!</h3>
         </ListView>
