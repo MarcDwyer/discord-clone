@@ -166,7 +166,7 @@ type ClientPayload struct {
 	Name       string    `json:"name"`
 	Messages   []Address `json:"messages"`
 	IsOnline   bool      `json:"isOnline"`
-	NewMessage bool      `json:""newMessage`
+	NewMessage bool      `json:"newMessage"`
 	Type       string    `json:"type"`
 }
 
@@ -205,9 +205,11 @@ func Sockets(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), id: id}
 	client.hub.register <- client
 
-	data := SendID{ID: id.String(), Type: "id"}
-	newID, _ := json.Marshal(data)
-	client.send <- newID
+	go func() {
+		data := SendID{ID: id.String(), Type: "id"}
+		newID, _ := json.Marshal(data)
+		client.send <- newID
+	}()
 	go client.readPump()
 	go client.writePump()
 }
